@@ -38,25 +38,26 @@ unsigned int month = 2;
 unsigned int day = 1;
 unsigned int hours = 5;
 unsigned int minutes = 8;
-unsigned long timeInMinutes;
+unsigned long timeInMinutes = 0;
 unsigned int seconds = 0;
 
 // time ints
-int At = 0;
-int Bt = 0; 
-int Ct = 0;
+unsigned long At = 0;
+unsigned long Bt = 0; 
+unsigned long Ct = 0;
+unsigned int schedHours = 0;
+unsigned int schedMinutes= 0;
 
 
 //variables to ports
 const int button1 = A0;
 const int button2 = A1;
 const int button3 = A2;
+const int buzz = A3; 
 
 const int led1 = 10;
 const int led2 = 11;
 const int led3 = 12;
-
-const int buzz = A6; 
 
 //time variables
 unsigned long startTime;
@@ -92,6 +93,7 @@ void setup() {
   pinMode(led3, OUTPUT);
 
   pinMode(buzz, OUTPUT);
+  Serial.println("Hi");
 }
 
 void loop() {
@@ -103,10 +105,13 @@ void loop() {
 
   if (currentState == RUNNING) {
     unsigned long currentMillis = millis();
-    if (currentMillis - lastCheck >= 60000) {
+    if (currentMillis - lastCheck >= 1000) { //60000) {
       lastCheck = currentMillis;
       updateTime();
       updateDisplay();
+      resetButton();
+      checkButtonState();
+      updateAlarms();
     }
   }
 }
@@ -166,15 +171,15 @@ void handleKeyPress(char key) {
         
         if (inputBuffer.length() == 4) {
           // Process current time input
-          hours = (inputBuffer.substring(0, 2)).toInt();
-          minutes = (inputBuffer.substring(2, 4)).toInt();
+          schedHours = (inputBuffer.substring(0, 2)).toInt();
+          schedMinutes = (inputBuffer.substring(2, 4)).toInt();
           
           // Validate time
           if (hours < 24 && minutes < 60) {
             delay(1000);  // Show the completed input briefly
             currentState = GETTING_SCHEDULE_TIME_B;
             inputBuffer = "";
-            int scheduledTime = (hours * 60) + minutes;
+            int scheduledTime = (schedHours * 60) + schedMinutes;
             At = scheduledTime;
             lcd.clear();
             lcd.print("Time for Pill B?");
@@ -202,15 +207,15 @@ void handleKeyPress(char key) {
         
         if (inputBuffer.length() == 4) {
           // Process current time input
-          hours = (inputBuffer.substring(0, 2)).toInt();
-          minutes = (inputBuffer.substring(2, 4)).toInt();
+          schedHours = (inputBuffer.substring(0, 2)).toInt();
+          schedMinutes = (inputBuffer.substring(2, 4)).toInt();
           
           // Validate time
           if (hours < 24 && minutes < 60) {
             delay(1000);  // Show the completed input briefly
             currentState = GETTING_SCHEDULE_TIME_C;
             inputBuffer = "";
-            int scheduledTime = (hours * 60) + minutes;
+            int scheduledTime = (schedHours * 60) + schedMinutes;
             Bt = scheduledTime;
             lcd.clear();
             lcd.print("Time for Pill C?");
@@ -283,35 +288,49 @@ void resetButton() {
   // Check if Button 1 is pressed (it will turn off LED 1)
   if (digitalRead(button1) == LOW) {
     led1State = false; // Turn off LED 1
+    buzzerState = false;
   }
 
   // Check if Button 2 is pressed (it will turn off LED 2)
   if (digitalRead(button2) == LOW) {
     led2State = false; // Turn off LED 2
+    buzzerState = false;
   }
 
   // Check if Button 3 is pressed (it will turn off LED 2)
   if (digitalRead(button3) == LOW) {
     led3State = false; // Turn off LED 3
+    buzzerState = false;
+  }
+
+  if (!led1State && !led2State && !led3State) {
+    buzzerState = false;
   }
 }
 
 void checkButtonState() {
-  timeInMinutes = seconds //(hours * 60) + minutes;
+  timeInMinutes = (hours * 60) + minutes;
   
     // Turn on LED 1 if it's time (6 hours) and Button 1 is not pressed
-  if (timeInMinutes == 2) {
+  if (timeInMinutes == At) {
+    Serial.println("Entered LED 1");
     led1State = true; // Turn on LED 1
+    
+    buzzerState = true;
   }
 
   // Turn on LED 2 if it's time (8 hours) and Button 2 is not pressed
-  if (timeInMinutes == 3) {
+  if (timeInMinutes == Bt) {
+    Serial.println("Entered LED 2");
     led2State = true; // Turn on LED 2
+    buzzerState = true;
   }
 
   // Turn on LED 3 if it's time (10 hours)
-  if (timeInMinutes >= 4) {
+  if (timeInMinutes == Ct) {
+    Serial.println("Entered LED 3");
     led3State = true; // Turn on LED 3
+    buzzerState = true;
   }
 }
 
@@ -320,6 +339,13 @@ void displayWaitingScreen() {
   lcd.print("Press A to start");
   lcd.setCursor(0, 1);
   lcd.print("time setup");
+}
+
+void updateAlarms() {
+  digitalWrite(led1, led1State ? HIGH : LOW); // If led1State is true, turn on LED 1
+  digitalWrite(led2, led2State ? HIGH : LOW); // If led2State is true, turn on LED 2
+  digitalWrite(led3, led3State ? HIGH : LOW); // If led3State is true, turn on LED 3
+  digitalWrite(buzz, buzzerState ? HIGH : LOW);
 }
 
 void updateTime() {
@@ -335,7 +361,7 @@ void updateTime() {
 
   if (month == 2) {
     if (day == 28 && year % 4 == 0) {
-      pass
+    
     }
   }
 
