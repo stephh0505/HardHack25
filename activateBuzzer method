@@ -1,8 +1,0 @@
-void loop(){
-  while (led1State == HIGH || led2State == HIGH || led3State == HIGH || led4State == HIGH ||){
-    digitalWrite(buzz, HIGH);
-  }
-  else(){
-    digitalWrite(buzz, LOW);
-  }
-}
