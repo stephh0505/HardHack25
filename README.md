@@ -1,2 +1,2 @@
 # HardHack25
-The best group in hardhack. Cool Pillbox
+We created a smart pill box that reminds you to take your meds. 
