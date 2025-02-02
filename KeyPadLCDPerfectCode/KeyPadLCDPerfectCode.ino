@@ -152,15 +152,19 @@ void loop() {
 }
 
 void handleKeyPress(char key) {
+  if (key == "A") {
+    setUpTimes();
+  }
+
+}
+
+void setUpTimes() {
   switch (currentState) {
     case WAITING_TO_START:
       if (key == 'A') {
         currentState = GETTING_CURRENT_TIME;
         inputBuffer = "";
-        lcd.clear();
-        lcd.print("Current time?");
-        lcd.setCursor(0, 1);
-        lcd.print("HHMM:");
+        setSetupMessage("Current time?")
       }
       break;
     //GETTING CURRENT TIME
@@ -180,10 +184,7 @@ void handleKeyPress(char key) {
             delay(1000);  // Show the completed input briefly
             currentState = GETTING_SCHEDULE_TIME_A;
             inputBuffer = "";
-            lcd.clear();
-            lcd.print("Time for Pill A?");
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:");
+            setSetupMessage("Time for Pill A?")
           } else {
             // Invalid time
             inputBuffer = "";
@@ -216,10 +217,7 @@ void handleKeyPress(char key) {
             inputBuffer = "";
             int scheduledTime = (schedHours * 60) + schedMinutes;
             At = scheduledTime;
-            lcd.clear();
-            lcd.print("Time for Pill B?");
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:");
+            setSetupMessage("Time for Pill B?")
           } else {
             // Invalid time
             inputBuffer = "";
@@ -252,15 +250,12 @@ void handleKeyPress(char key) {
             inputBuffer = "";
             int scheduledTime = (schedHours * 60) + schedMinutes;
             Bt = scheduledTime;
-            lcd.clear();
-            lcd.print("Time for Pill C?");
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:");
+            setSetupMessage("Time for Pill C?")
           } else {
             // Invalid time
             inputBuffer = "";
             lcd.setCursor(0, 1);
-            lcd.print("Invalid! HHMM:    ");
+            lcd.print("Invalid!");
             delay(1000);
             lcd.setCursor(0, 1);
             lcd.print("HHMM:            ");
@@ -317,6 +312,13 @@ void handleKeyPress(char key) {
       }
       break;
   }
+}
+
+void setSetupMessage(char *message) {
+  lcd.clear();
+  lcd.print(message);
+  lcd.setCursor(0, 1);
+  lcd.print("HHMM:");
 }
 
 void resetButton() {
