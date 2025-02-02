@@ -17,11 +17,12 @@ void setup() {
 void activateBuzzer() {
     digitalWrite(BUZZER_PIN, HIGH);  // Turn on the buzzer
     // Keep buzzer on until any button is pressed (goes LOW)
-    while (digitalRead(BUTTON1) == HIGH && 
-           digitalRead(BUTTON2) == HIGH && 
-           digitalRead(BUTTON3) == HIGH && 
-           digitalRead(BUTTON4) == HIGH) {
+    if (digitalRead(BUTTON1) == HIGH || 
+           digitalRead(BUTTON2) == HIGH || 
+           digitalRead(BUTTON3) == HIGH || 
+           digitalRead(BUTTON4) == HIGH){
         delay(50);  // Small delay to avoid excessive CPU usage
+digitalWrite(BUZZER_PIN, LOW);
     }
 
     digitalWrite(BUZZER_PIN, LOW);  // Turn off buzzer when a button is pressed
