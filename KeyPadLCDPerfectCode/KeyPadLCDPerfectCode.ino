@@ -20,6 +20,7 @@ Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS)
 unsigned long lastCheck = 0;
 char key;
 char timeStr[17];
+char secondStr[17];
 String inputBuffer = "";
 
 // Time variables
@@ -79,8 +80,7 @@ const int led2 = 11;
 const int led3 = 12;
 
 //time variables
-unsigned long startTime;
-unsigned long elapsedTime;
+unsigned long currentMillis;
 
 //set states
 bool led1State = false;
@@ -117,6 +117,7 @@ void setup() {
   pinMode(buzz, OUTPUT);
   handleTimeSetup();
   inSetup = false;
+  lastCheck = millis();
 }
 
 void loop() {
@@ -126,58 +127,64 @@ void loop() {
     handleKeyPress(key);
   }
 
-  unsigned long currentMillis = millis();
+  updateTimeStep();
+  checkButtonState();
+}
 
-  if (currentMillis - lastCheck >= 1000) { //60000) {
+void updateTimeStep() {
+  currentMillis = millis();
+  unsigned long deltaT = currentMillis - lastCheck;
+  if (deltaT >= 1000) { //60000) {
     lastCheck = currentMillis;
-    updateTime();
+    updateTime(deltaT);
     updateDisplay();
-    checkButtonState();
     updateAlarms();
+  } else if (deltaT < 0) {
+    lastCheck = currentMillis;
   }
 }
 
 void handleKeyPress(char key) {
+  bool exited;
   if (key == 'D') {
-    changeTime("Current time?");
-    hours = intArray[0];
-    minutes = intArray[1];
+    exited = changeTime("Current time?");
+    if (!exited) {
+      hours = intArray[0];
+      minutes = intArray[1];
+    }
   } else if (key == 'A') {
-    changeTime("Time for Pill A?");
-    At = (intArray[0] * 60) + intArray[1];
+    exited = changeTime("Time for Pill A?");
+    if (!exited) { At = (intArray[0] * 60) + intArray[1]; }
   } else if (key == 'B') {
-    changeTime("Time for Pill B?");
-    Bt = (intArray[0] * 60) + intArray[1];
+    exited = changeTime("Time for Pill B?");
+    if (!exited) { Bt = (intArray[0] * 60) + intArray[1]; }
   } else if (key == 'C') {
-    changeTime("Time for Pill C?");
-    Ct = (intArray[0] * 60) + intArray[1];
+    exited = changeTime("Time for Pill C?");
+    if (!exited) { Ct = (intArray[0] * 60) + intArray[1]; }
   }
 }
 
 void handleTimeSetup() {
+  bool exited;
   while (true) {
     key = customKeypad.getKey();
     if (key == 'D') {
-      changeTime("Current time?");
+      exited = changeTime("Current time?");
       hours = intArray[0];
       minutes = intArray[1];
-      changeTime("Time for Pill A?");
+      exited = changeTime("Time for Pill A?");
       At = (intArray[0] * 60) + intArray[1];
-      changeTime("Time for Pill B?");
+      exited = changeTime("Time for Pill B?");
       Bt = (intArray[0] * 60) + intArray[1];
-      changeTime("Time for Pill C?");
+      exited = changeTime("Time for Pill C?");
       Ct = (intArray[0] * 60) + intArray[1];
       break;
-    } else {
-      lcd.setCursor(0, 1);
-      lcd.print("Invalid!");
-      delay(1000);
-      displayWaitingScreen();
     }
   }
 }
 
-void changeTime(char* str) {
+bool changeTime(char* str) {
+  Serial.println("IN CHANGETIME");
   inputBuffer = "";
   setSetupMessage(str);
 
@@ -185,7 +192,7 @@ void changeTime(char* str) {
     key = customKeypad.getKey();
     if (key) {
       if (key == '#') {
-        if (inputBuffer.length() > 1) {  // Check if removal possible
+        if (inputBuffer.length() >= 1) {  // Check if removal possible
           lcd.setCursor(5 + inputBuffer.length() - 1, 1);
           lcd.print(' ');
           inputBuffer.remove(inputBuffer.length() - 1, 1);
@@ -199,7 +206,7 @@ void changeTime(char* str) {
           setSetupMessage(str);
           lcd.print(inputBuffer);
         } else {
-          break;
+          return true;
         }
       } else if (isDigit(key)) {
         inputBuffer += key;
@@ -214,6 +221,7 @@ void changeTime(char* str) {
             delay(1000);
             intArray[0] = tempHours;
             intArray[1] = tempMinutes;
+            return false;
           } else {
             invalidTimeDisplay();
           }
@@ -226,7 +234,7 @@ void changeTime(char* str) {
 void invalidTimeDisplay() {
   inputBuffer = "";
   lcd.setCursor(0, 1);
-  lcd.print("Invalid!");
+  lcd.print("Invalid!     ");
   delay(1000);
   lcd.setCursor(0, 1);
   lcd.print("HHMM:            ");
@@ -257,12 +265,12 @@ void resetButton() {
     led3State = false; // Turn off LED 3
     buzzerState = false;
   }
+
+  updateAlarms();
 }
 
-void checkButtonState() {
-  timeInMinutes = (hours * 60) + minutes;
-  
-    // Turn on LED 1 if it's time (6 hours) and Button 1 is not pressed
+void checkButton() {
+  // Turn on LED 1 if it's time (6 hours) and Button 1 is not pressed
   if (timeInMinutes == At) {
     Serial.println("Entered LED 1");
     led1State = true; // Turn on LED 1
@@ -282,14 +290,25 @@ void checkButtonState() {
     led3State = true; // Turn on LED 3
     buzzerState = true;
   }
+}
+
+void checkButtonState() {
+  checkButton();
 
   if (buzzerState) {
     for (int i = 0; i < sizeof(melody) / sizeof(int); i++) {
-      updateAlarms();
+      if (!buzzerState) {
+        break;
+      }
+
+      checkButton();
+
+      updateTimeStep();
       int duration = noteDurations[i];  
       tone(buzz, melody[i], duration);
       delay(duration * 1.1);
       resetButton();
+
     }
   }
 }
@@ -308,10 +327,11 @@ void updateAlarms() {
   digitalWrite(buzz, buzzerState ? HIGH : LOW);
 }
 
-void updateTime() {
-  minutes++;
-  if (minutes == 60) {
-    minutes = 0;
+void updateTime(unsigned long deltaT) {
+  unsigned long addMinutes = deltaT / 1000; // 60000
+  minutes += addMinutes;
+  if (minutes >= 60) {
+    minutes = minutes % 60;
     hours++;
   }
   if (hours == 24) {
@@ -329,6 +349,8 @@ void updateTime() {
     month = 1;
     year++;
   }
+
+  timeInMinutes = (hours * 60) + minutes;
 }
 
 void updateDisplay() {
@@ -336,4 +358,10 @@ void updateDisplay() {
   snprintf(timeStr, sizeof(timeStr), "%02u/%02u/%04lu %02u:%02u", month, day, year, hours, minutes);
   lcd.setCursor(0, 0);
   lcd.print(timeStr);
+  lcd.setCursor(0, 1);
+  unsigned long printA = At - (At / 60) * 60;
+  unsigned long printB = Bt - (Bt / 60) * 60;
+  unsigned long printC = Ct - (Ct / 60) * 60;
+  snprintf(secondStr, sizeof(secondStr), "%02lu%02lu  %02lu%02lu  %02lu%02lu", At/60, printA, Bt/60, printB, Ct/60, printC);
+  lcd.print(secondStr);
 }
