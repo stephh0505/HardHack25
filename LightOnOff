@@ -1,13 +1,13 @@
 //variables to ports
-const int button1 = 11;
-const int button2 = 12;
-const int button3 = 2;
+const int button1 = A0;
+const int button2 = A1;
+const int button3 = A2;
 
-const int led1 = 7;
-const int led2 = 8;
-const int led3 = 7;
+const int led1 = 10;
+const int led2 = 11;
+const int led3 = 12;
 
-const int buzz = 133; 
+const int buzz = A6; 
 
 // Set target times in seconds 
 long At = At
@@ -59,7 +59,7 @@ void loop() {
   unsigned long elapsedTimeSecs = elapsedTime / 1000;
 
   // Check if Button 1 is pressed (it will turn off LED 1)
-  if (digitalRead(buttonPin1) == LOW) {
+  if (digitalRead(button1) == LOW) {
     led1State = false; // Turn off LED 1
   }
 
