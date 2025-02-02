@@ -55,6 +55,36 @@ const int button2 = A1;
 const int button3 = A2;
 const int buzz = A3; 
 
+//notes for buzz song 
+#define NOTE_C4  262
+#define NOTE_D4  294
+#define NOTE_E4  330
+#define NOTE_F4  349
+#define NOTE_G4  392
+#define NOTE_A4  440
+#define NOTE_B4  494
+#define NOTE_C5  523
+#define NOTE_D5  587
+#define NOTE_E5  659
+#define NOTE_F5  698
+#define NOTE_G5  784
+#define NOTE_A5  880
+
+int melody[] = {
+  NOTE_G4, NOTE_C5, NOTE_D5, NOTE_E5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_C5, NOTE_G4, 
+  NOTE_G4, NOTE_C5, NOTE_D5, NOTE_E5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_C5, NOTE_G4, 
+  NOTE_E5, NOTE_E5, NOTE_E5, NOTE_F5, NOTE_G5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_C5, 
+  NOTE_D5, NOTE_E5, NOTE_F5, NOTE_G5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_C5, NOTE_G4
+};
+
+int noteDurations[] = {
+  150, 150, 150, 150, 150, 150, 150, 150, 100,
+  150, 150, 150, 150, 150, 150, 150, 150, 100,
+  100, 100, 100, 150, 150, 150, 150, 150, 100,
+  100, 100, 150, 150, 150, 150, 150, 100
+};
+
+
 const int led1 = 10;
 const int led2 = 11;
 const int led3 = 12;
@@ -83,7 +113,12 @@ void setup() {
   lcd.backlight();
   displayWaitingScreen();
   Serial.begin(9600);
-
+  
+  for (int i = 0; i < sizeof(melody) / sizeof(int); i++) {
+      int duration = noteDurations[i];  
+      tone(buzz, melody[i], duration);
+      delay(duration * 1.1);
+  }
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
   pinMode(button3, INPUT);
