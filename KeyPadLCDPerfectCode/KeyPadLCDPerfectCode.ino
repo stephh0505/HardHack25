@@ -17,18 +17,8 @@ byte rowPins[ROWS] = {2,3,4,5};
 byte colPins[COLS] = {6,7,8,9};
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
-// State machine states
-enum State {
-  WAITING_TO_START,
-  GETTING_CURRENT_TIME,
-  GETTING_SCHEDULE_TIME_A,
-  GETTING_SCHEDULE_TIME_B,
-  GETTING_SCHEDULE_TIME_C,
-  RUNNING
-};
-State currentState = WAITING_TO_START;
-
 unsigned long lastCheck = 0;
+char key;
 char timeStr[17];
 String inputBuffer = "";
 
@@ -36,23 +26,22 @@ String inputBuffer = "";
 unsigned long year = 2025;
 unsigned int month = 2;
 unsigned int day = 1;
-unsigned int hours = 5;
-unsigned int minutes = 8;
+unsigned int hours;
+unsigned int minutes;
 unsigned long timeInMinutes = 0;
-unsigned int seconds = 0;
 
 // time ints
 unsigned long At = 0;
 unsigned long Bt = 0; 
 unsigned long Ct = 0;
-unsigned int schedHours = 0;
-unsigned int schedMinutes= 0;
+unsigned int tempHours = 0;
+unsigned int tempMinutes= 0;
 
 
 //variables to ports
-const int button1 = A0;
+const int button1 = A2;
 const int button2 = A1;
-const int button3 = A2;
+const int button3 = A0;
 const int buzz = A3; 
 
 //notes for buzz song 
@@ -108,17 +97,15 @@ bool button3Pressed = false;
 
 bool buzzerState = false;
 
+bool inSetup = true;
+int intArray[2];
+
 void setup() {
   lcd.init();
   lcd.backlight();
   displayWaitingScreen();
   Serial.begin(9600);
-  
-  for (int i = 0; i < sizeof(melody) / sizeof(int); i++) {
-      int duration = noteDurations[i];  
-      tone(buzz, melody[i], duration);
-      delay(duration * 1.1);
-  }
+
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
   pinMode(button3, INPUT);
@@ -128,190 +115,121 @@ void setup() {
   pinMode(led3, OUTPUT);
 
   pinMode(buzz, OUTPUT);
-  Serial.println("Hi");
+  handleTimeSetup();
+  inSetup = false;
 }
 
 void loop() {
-  char customKey = customKeypad.getKey();
-  
-  if (customKey) {
-    handleKeyPress(customKey);
+  key = customKeypad.getKey();
+
+  if (key) {
+    handleKeyPress(key);
   }
 
-  if (currentState == RUNNING) {
-    unsigned long currentMillis = millis();
-    if (currentMillis - lastCheck >= 1000) { //60000) {
-      lastCheck = currentMillis;
-      updateTime();
-      updateDisplay();
-      resetButton();
-      checkButtonState();
-      updateAlarms();
-    }
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - lastCheck >= 1000) { //60000) {
+    lastCheck = currentMillis;
+    updateTime();
+    updateDisplay();
+    checkButtonState();
+    updateAlarms();
   }
 }
 
 void handleKeyPress(char key) {
-  if (key == "A") {
-    setUpTimes();
+  if (key == 'D') {
+    changeTime("Current time?");
+    hours = intArray[0];
+    minutes = intArray[1];
+  } else if (key == 'A') {
+    changeTime("Time for Pill A?");
+    At = (intArray[0] * 60) + intArray[1];
+  } else if (key == 'B') {
+    changeTime("Time for Pill B?");
+    Bt = (intArray[0] * 60) + intArray[1];
+  } else if (key == 'C') {
+    changeTime("Time for Pill C?");
+    Ct = (intArray[0] * 60) + intArray[1];
   }
-
 }
 
-void setUpTimes() {
-  switch (currentState) {
-    case WAITING_TO_START:
-      if (key == 'A') {
-        currentState = GETTING_CURRENT_TIME;
-        inputBuffer = "";
-        setSetupMessage("Current time?")
-      }
+void handleTimeSetup() {
+  while (true) {
+    key = customKeypad.getKey();
+    if (key == 'D') {
+      changeTime("Current time?");
+      hours = intArray[0];
+      minutes = intArray[1];
+      changeTime("Time for Pill A?");
+      At = (intArray[0] * 60) + intArray[1];
+      changeTime("Time for Pill B?");
+      Bt = (intArray[0] * 60) + intArray[1];
+      changeTime("Time for Pill C?");
+      Ct = (intArray[0] * 60) + intArray[1];
       break;
-    //GETTING CURRENT TIME
-    case GETTING_CURRENT_TIME:
-      if (isDigit(key)) {
-        inputBuffer += key;
-        lcd.setCursor(5 + inputBuffer.length() - 1, 1);
-        lcd.print(key);
-        
-        if (inputBuffer.length() == 4) {
-          // Process current time input
-          hours = (inputBuffer.substring(0, 2)).toInt();
-          minutes = (inputBuffer.substring(2, 4)).toInt();
-          
-          // Validate time
-          if (hours < 24 && minutes < 60) {
-            delay(1000);  // Show the completed input briefly
-            currentState = GETTING_SCHEDULE_TIME_A;
-            inputBuffer = "";
-            setSetupMessage("Time for Pill A?")
-          } else {
-            // Invalid time
-            inputBuffer = "";
-            lcd.setCursor(0, 1);
-            lcd.print("Invalid! HHMM:    ");
-            delay(1000);
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:            ");
-          }
-        }
-      }
-      break;
-
-    //GETTING CURRENT TIME
-    case GETTING_SCHEDULE_TIME_A:
-      if (isDigit(key)) {
-        inputBuffer += key;
-        lcd.setCursor(5 + inputBuffer.length() - 1, 1);
-        lcd.print(key);
-        
-        if (inputBuffer.length() == 4) {
-          // Process current time input
-          schedHours = (inputBuffer.substring(0, 2)).toInt();
-          schedMinutes = (inputBuffer.substring(2, 4)).toInt();
-          
-          // Validate time
-          if (hours < 24 && minutes < 60) {
-            delay(1000);  // Show the completed input briefly
-            currentState = GETTING_SCHEDULE_TIME_B;
-            inputBuffer = "";
-            int scheduledTime = (schedHours * 60) + schedMinutes;
-            At = scheduledTime;
-            setSetupMessage("Time for Pill B?")
-          } else {
-            // Invalid time
-            inputBuffer = "";
-            lcd.setCursor(0, 1);
-            lcd.print("Invalid! HHMM:    ");
-            delay(1000);
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:            ");
-          }
-        }
-      }
-      break;
-
-    //GETTING CURRENT TIME
-    case GETTING_SCHEDULE_TIME_B:
-      if (isDigit(key)) {
-        inputBuffer += key;
-        lcd.setCursor(5 + inputBuffer.length() - 1, 1);
-        lcd.print(key);
-        
-        if (inputBuffer.length() == 4) {
-          // Process current time input
-          schedHours = (inputBuffer.substring(0, 2)).toInt();
-          schedMinutes = (inputBuffer.substring(2, 4)).toInt();
-          
-          // Validate time
-          if (hours < 24 && minutes < 60) {
-            delay(1000);  // Show the completed input briefly
-            currentState = GETTING_SCHEDULE_TIME_C;
-            inputBuffer = "";
-            int scheduledTime = (schedHours * 60) + schedMinutes;
-            Bt = scheduledTime;
-            setSetupMessage("Time for Pill C?")
-          } else {
-            // Invalid time
-            inputBuffer = "";
-            lcd.setCursor(0, 1);
-            lcd.print("Invalid!");
-            delay(1000);
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:            ");
-          }
-        }
-      }
-      break;
-
-    //GETTING Schedule TIME C
-    case GETTING_SCHEDULE_TIME_C:
-      if (isDigit(key)) {
-        inputBuffer += key;
-        lcd.setCursor(5 + inputBuffer.length() - 1, 1);
-        lcd.print(key);
-        
-        if (inputBuffer.length() == 4) {
-          // Process scheduled time input
-          int schedHours = (inputBuffer.substring(0, 2)).toInt();
-          int schedMinutes = (inputBuffer.substring(2, 4)).toInt();
-          
-          if (schedHours < 24 && schedMinutes < 60) {
-            // Valid scheduled time - start the main program + assign variable At
-            Ct = (schedHours * 60) + schedMinutes;
-            currentState = RUNNING;
-            updateDisplay();
-            Serial.print("At: ");
-            Serial.println(At);
-
-            Serial.print("Bt: ");
-            Serial.println(Bt);
-
-            Serial.print("Ct: ");
-            Serial.println(Ct);
-
-            delay(1000);
-          } else {
-            // Invalid time
-            inputBuffer = "";
-            lcd.setCursor(0, 1);
-            lcd.print("Invalid! HHMM:    ");
-            delay(1000);
-            lcd.setCursor(0, 1);
-            lcd.print("HHMM:            ");
-          }
-        }
-      }
-      break;
-
-    case RUNNING:
-      if (key == 'A') {
-        // Allow resetting the process
-        currentState = WAITING_TO_START;
-        displayWaitingScreen();
-      }
-      break;
+    } else {
+      lcd.setCursor(0, 1);
+      lcd.print("Invalid!");
+      delay(1000);
+      displayWaitingScreen();
+    }
   }
+}
+
+void changeTime(char* str) {
+  inputBuffer = "";
+  setSetupMessage(str);
+
+  while (true) {
+    key = customKeypad.getKey();
+    if (key) {
+      if (key == '#') {
+        if (inputBuffer.length() > 1) {  // Check if removal possible
+          lcd.setCursor(5 + inputBuffer.length() - 1, 1);
+          lcd.print(' ');
+          inputBuffer.remove(inputBuffer.length() - 1, 1);
+        }
+      } else if (key == '*') {
+        if (inSetup) {
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Finish setup!");
+          delay(1000);
+          setSetupMessage(str);
+          lcd.print(inputBuffer);
+        } else {
+          break;
+        }
+      } else if (isDigit(key)) {
+        inputBuffer += key;
+        lcd.setCursor(5 + inputBuffer.length() - 1, 1);
+        lcd.print(key);
+        if (inputBuffer.length() == 4) {
+          // Process current time input
+          tempHours = (inputBuffer.substring(0, 2)).toInt();
+          tempMinutes = (inputBuffer.substring(2, 4)).toInt();
+          // Validate time
+          if (tempHours < 24 && tempMinutes < 60) {  // Fixed variable names
+            delay(1000);
+            intArray[0] = tempHours;
+            intArray[1] = tempMinutes;
+          } else {
+            invalidTimeDisplay();
+          }
+        }
+      }
+    }
+  }
+}
+
+void invalidTimeDisplay() {
+  inputBuffer = "";
+  lcd.setCursor(0, 1);
+  lcd.print("Invalid!");
+  delay(1000);
+  lcd.setCursor(0, 1);
+  lcd.print("HHMM:            ");
 }
 
 void setSetupMessage(char *message) {
@@ -339,10 +257,6 @@ void resetButton() {
     led3State = false; // Turn off LED 3
     buzzerState = false;
   }
-
-  if (!led1State && !led2State && !led3State) {
-    buzzerState = false;
-  }
 }
 
 void checkButtonState() {
@@ -352,7 +266,6 @@ void checkButtonState() {
   if (timeInMinutes == At) {
     Serial.println("Entered LED 1");
     led1State = true; // Turn on LED 1
-    
     buzzerState = true;
   }
 
@@ -369,11 +282,21 @@ void checkButtonState() {
     led3State = true; // Turn on LED 3
     buzzerState = true;
   }
+
+  if (buzzerState) {
+    for (int i = 0; i < sizeof(melody) / sizeof(int); i++) {
+      updateAlarms();
+      int duration = noteDurations[i];  
+      tone(buzz, melody[i], duration);
+      delay(duration * 1.1);
+      resetButton();
+    }
+  }
 }
 
 void displayWaitingScreen() {
   lcd.clear();
-  lcd.print("Press A to start");
+  lcd.print("Press D to start");
   lcd.setCursor(0, 1);
   lcd.print("time setup");
 }
