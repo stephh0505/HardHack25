@@ -1,0 +1,35 @@
+#define BUZZER_PIN 3  // Buzzer connected to pin 3
+#define BUTTON1 2  // Button 1
+#define BUTTON2 4  // Button 2
+#define BUTTON3 5  // Button 3
+#define BUTTON4 6  // Button 4
+
+void setup() {
+    pinMode(BUZZER_PIN, OUTPUT);
+    
+    // Enable internal pull-up resistors (buttons default to HIGH)
+    pinMode(BUTTON1, INPUT_PULLUP);
+    pinMode(BUTTON2, INPUT_PULLUP);
+    pinMode(BUTTON3, INPUT_PULLUP);
+    pinMode(BUTTON4, INPUT_PULLUP);
+}
+
+void activateBuzzer(int A_Time) {
+    delay(A_Time);  // Wait for the specified time
+    digitalWrite(BUZZER_PIN, HIGH);  // Turn on the buzzer
+
+    // Keep buzzer on until any button is pressed (goes LOW)
+    while (digitalRead(BUTTON1) == HIGH && 
+           digitalRead(BUTTON2) == HIGH && 
+           digitalRead(BUTTON3) == HIGH && 
+           digitalRead(BUTTON4) == HIGH) {
+        delay(50);  // Small delay to avoid excessive CPU usage
+    }
+
+    digitalWrite(BUZZER_PIN, LOW);  // Turn off buzzer when a button is pressed
+}
+//Example
+void loop() {
+    activateBuzzer(5000);  // Example: Start buzzer after 5 seconds
+    delay(10000);  // Wait before running again
+}
