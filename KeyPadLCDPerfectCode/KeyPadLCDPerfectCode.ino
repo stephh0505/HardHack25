@@ -26,7 +26,6 @@ enum State {
   GETTING_SCHEDULE_TIME_C,
   RUNNING
 };
-
 State currentState = WAITING_TO_START;
 
 unsigned long lastCheck = 0;
@@ -39,18 +38,60 @@ unsigned int month = 2;
 unsigned int day = 1;
 unsigned int hours = 5;
 unsigned int minutes = 8;
+unsigned long timeInMinutes;
 unsigned int seconds = 0;
 
+// time ints
 int At = 0;
 int Bt = 0; 
 int Ct = 0;
 
+
+//variables to ports
+const int button1 = A0;
+const int button2 = A1;
+const int button3 = A2;
+
+const int led1 = 10;
+const int led2 = 11;
+const int led3 = 12;
+
+const int buzz = A6; 
+
+//time variables
+unsigned long startTime;
+unsigned long elapsedTime;
+
+//set states
+bool led1State = false;
+bool led2State = false;
+bool led3State = false;
+
+bool lastButton1State = LOW;
+bool lastButton2State = LOW;
+bool lastButton3State = LOW;
+
+bool button1Pressed = false;
+bool button2Pressed = false;
+bool button3Pressed = false;
+
+bool buzzerState = false;
 
 void setup() {
   lcd.init();
   lcd.backlight();
   displayWaitingScreen();
   Serial.begin(9600);
+
+  pinMode(button1, INPUT);
+  pinMode(button2, INPUT);
+  pinMode(button3, INPUT);
+
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
+
+  pinMode(buzz, OUTPUT);
 }
 
 void loop() {
@@ -82,8 +123,7 @@ void handleKeyPress(char key) {
         lcd.print("HHMM:");
       }
       break;
-
-//GETTING CURRENT TIME
+    //GETTING CURRENT TIME
     case GETTING_CURRENT_TIME:
       if (isDigit(key)) {
         inputBuffer += key;
@@ -117,7 +157,7 @@ void handleKeyPress(char key) {
       }
       break;
 
-//GETTING CURRENT TIME
+    //GETTING CURRENT TIME
     case GETTING_SCHEDULE_TIME_A:
       if (isDigit(key)) {
         inputBuffer += key;
@@ -152,7 +192,8 @@ void handleKeyPress(char key) {
         }
       }
       break;
-//GETTING CURRENT TIME
+
+    //GETTING CURRENT TIME
     case GETTING_SCHEDULE_TIME_B:
       if (isDigit(key)) {
         inputBuffer += key;
@@ -188,7 +229,7 @@ void handleKeyPress(char key) {
       }
       break;
 
-//GETTING Schedule TIME C
+    //GETTING Schedule TIME C
     case GETTING_SCHEDULE_TIME_C:
       if (isDigit(key)) {
         inputBuffer += key;
@@ -238,6 +279,42 @@ void handleKeyPress(char key) {
   }
 }
 
+void resetButton() {
+  // Check if Button 1 is pressed (it will turn off LED 1)
+  if (digitalRead(button1) == LOW) {
+    led1State = false; // Turn off LED 1
+  }
+
+  // Check if Button 2 is pressed (it will turn off LED 2)
+  if (digitalRead(button2) == LOW) {
+    led2State = false; // Turn off LED 2
+  }
+
+  // Check if Button 3 is pressed (it will turn off LED 2)
+  if (digitalRead(button3) == LOW) {
+    led3State = false; // Turn off LED 3
+  }
+}
+
+void checkButtonState() {
+  timeInMinutes = seconds //(hours * 60) + minutes;
+  
+    // Turn on LED 1 if it's time (6 hours) and Button 1 is not pressed
+  if (timeInMinutes == 2) {
+    led1State = true; // Turn on LED 1
+  }
+
+  // Turn on LED 2 if it's time (8 hours) and Button 2 is not pressed
+  if (timeInMinutes == 3) {
+    led2State = true; // Turn on LED 2
+  }
+
+  // Turn on LED 3 if it's time (10 hours)
+  if (timeInMinutes >= 4) {
+    led3State = true; // Turn on LED 3
+  }
+}
+
 void displayWaitingScreen() {
   lcd.clear();
   lcd.print("Press A to start");
@@ -255,21 +332,18 @@ void updateTime() {
     hours = 0;
     day++;
   }
-  if (day > 30) {
-    day = 1;
-    month++;
+
+  if (month == 2) {
+    if (day == 28 && year % 4 == 0) {
+      pass
+    }
   }
-  if (month > 12) {
+
+  if (month == 12) {
     month = 1;
     year++;
   }
 }
-
-int count = 0;
-
-
-
-
 
 void updateDisplay() {
   lcd.clear();
