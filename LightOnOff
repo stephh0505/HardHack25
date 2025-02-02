@@ -2,18 +2,18 @@
 const int button1 = 11;
 const int button2 = 12;
 const int button3 = 2;
-const int button4 = 3;
+
 const int led1 = 7;
 const int led2 = 8;
 const int led3 = 7;
-const int led4 = 8;
+
 const int buzz = 133; 
 
 // Set target times in seconds 
-long At = 6 * 3600;  // LED 1 turns on at 6 h
-long Bt = 12 * 3600; // LED 2 turns on at 12 h
-long Ct = 18 * 3600; // LED 3 turns on at 18 h
-long Dt = 22 * 3600; // LED 4 turns on at 22 h (79200 seconds)
+long At = At
+long Bt = Bt
+long Ct = Ct
+
 
 //time variables
 unsigned long startTime;
@@ -23,15 +23,15 @@ unsigned long elapsedTime;
 bool led1State = false;
 bool led2State = false;
 bool led3State = false;
-bool led4State = false;
+
 bool lastButton1State = LOW;
 bool lastButton2State = LOW;
 bool lastButton3State = LOW;
-bool lastButton4State = LOW;
+
 bool button1Pressed = false;
 bool button2Pressed = false;
 bool button3Pressed = false;
-bool button4Pressed = false;
+
 bool buzzerState = false; 
 
 //set output and input stuff
@@ -40,12 +40,10 @@ void setup() {
   pinMode(button1, INPUT);
   pinMode(button2, INPUT);
   pinMode(button3, INPUT);
-  pinMode(button4, INPUT);
 
   pinMode(led1, OUTPUT);
   pinMode(led2, OUTPUT);
   pinMode(led3, OUTPUT);
-  pinMode(led4, OUTPUT);
 
   pinMode(buzz, OUTPUT);
 
@@ -66,9 +64,15 @@ void loop() {
   }
 
   // Check if Button 2 is pressed (it will turn off LED 2)
-  if (digitalRead(buttonPin2) == LOW) {
+  if (digitalRead(button2) == LOW) {
     led2State = false; // Turn off LED 2
   }
+
+// Check if Button 3 is pressed (it will turn off LED 2)
+  if (digitalRead(button3) == LOW) {
+    led3State = false; // Turn off LED 3
+  }
+
 
   // Turn on LED 1 if it's time (6 hours) and Button 1 is not pressed
   if (elapsedTimeInSeconds >= time1 && elapsedTimeSecs < time1 + 60 && !led1State) {
@@ -86,17 +90,17 @@ void loop() {
   }
 
   // Turn on LED 4 if it's time (12 hours)
-  if (elapsedTimeInSeconds >= time4 && elapsedTimeSecs < time4 + 60 && !led4State) {
+  if (elapsedTimeInSeconds >= time4 && elapsedTimeSecs < time4 + 60 && ! buzzerState) {
     led4State = true; // Turn on LED 4
   }
 
 
    // Update the LEDs based on their states
-  digitalWrite(ledPin1, led1State ? HIGH : LOW); // If led1State is true, turn on LED 1
-  digitalWrite(ledPin2, led2State ? HIGH : LOW); // If led2State is true, turn on LED 2
-  digitalWrite(ledPin3, led3State ? HIGH : LOW); // If led3State is true, turn on LED 3
-  digitalWrite(ledPin4, led4State ? HIGH : LOW); // If led4State is true, turn on LED 4
-  digitalWrit
+  digitalWrite(led1, led1State ? HIGH : LOW); // If led1State is true, turn on LED 1
+  digitalWrite(led2, led2State ? HIGH : LOW); // If led2State is true, turn on LED 2
+  digitalWrite(led3, led3State ? HIGH : LOW); // If led3State is true, turn on LED 3
+  digitalWrite(buzz, led4State ? HIGH : LOW); 
+ 
 
   // Wait for a little bit before checking again
   delay(1000); // Delay for 1 second
