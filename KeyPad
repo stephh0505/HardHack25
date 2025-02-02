@@ -1,0 +1,90 @@
+#include <Keypad.h>
+
+#include <stdio.h>
+#include <Keypad.h>
+
+// Define the rows and columns of the keypad
+const byte ROWS = 4;
+const byte COLS = 4;
+char keys[ROWS][COLS] = {
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+
+// Define the pins for rows and columns
+byte rowPins[ROWS] = {A0, A1, A2, A3};  
+byte colPins[COLS] = {A4, A5, A6, A7};
+
+// Create the keypad object
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
+// Variables to store the time choices for A, B, C, D
+int At = 0, Bt = 0, Ct = 0, Dt = 0;
+
+// A variable to track the current mode (for either letter selection or number input)
+char mode = ' ';  // Initially no mode (either A, B, C, D or 1-24)
+
+void setup() {
+  // Initialize Serial Monitor
+  Serial.begin(9600);
+  // Wait for 2 seconds before starting
+  delay(2000);
+}
+
+void loop() {
+  // Read the keypress
+  char key = keypad.getKey();
+  if (key) {
+    Serial.println(key);  // Print the key pressed
+
+    // If we're in letter selection mode (A, B, C, D)
+    if (mode == ' ') {
+      // User selects a letter
+      if (key == 'A' || key == 'B' || key == 'C' || key == 'D') {
+        mode = key;  // Set the mode to the selected letter (A, B, C, or D)
+        Serial.print("You selected: ");
+        Serial.println(mode);
+      }
+    }
+    // If we're in number input mode (1-24)
+    else if (key >= '1' && key <= '9') {
+      // Handle numbers 1-9 input
+      int num = key - '0';  // Convert char to integer
+      saveTime(num);
+    }
+    else if (key == '0') {
+      // Handle 0 separately (for entering 10-24)
+      int num = 10;
+      saveTime(num);
+    }
+  }
+}
+
+// Function to save the selected time based on mode (A, B, C, D)
+void saveTime(int num) {
+  // Assign the number to the corresponding time variable based on selected mode
+  if (mode == 'A') {
+    At = num;
+    Serial.print("At = ");
+    Serial.println(At);
+  } 
+  else if (mode == 'B') {
+    Bt = num;
+    Serial.print("Bt = ");
+    Serial.println(Bt);
+  }
+  else if (mode == 'C') {
+    Ct = num;
+    Serial.print("Ct = ");
+    Serial.println(Ct);
+  }
+  else if (mode == 'D') {
+    Dt = num;
+    Serial.print("Dt = ");
+    Serial.println(Dt);
+  }
+  // Reset mode to allow a new selection
+  mode = ' ';
+}
