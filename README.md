@@ -4,7 +4,7 @@
 
 Introducing the MagiClick Pill Case – the smart, simple solution designed with seniors in mind. Never miss a dose again: set your personalized schedule and let the bright LED reminder guide you to the right compartment. Its intuitive analog design and expandable setup make managing multiple medications effortless. Enjoy peace of mind and stay independent with MagiClick. Developed by team CACKS.
 
-### Table of Contents
+### Table of Contents:
 1. **Background**
 2. **Market Exploration**
 3. **Design and Prototyping**
