@@ -30,6 +30,6 @@ In software, it was challenging to learn new libraries and the Arduino language.
 ## Feature Summary
 Here is a video that goes over the features of our prototype. 
 
-[![Watch the video](https://i9.ytimg.com/vi_webp/CwNRd6YSiFY/mqdefault.webp?v=67c4405f&sqp=CIyAkb4G&rs=AOn4CLCaclyy-LqLTrT5V0faLmEKbebY6Q)](https://www.youtube.com/watch?v=CwNRd6YSiFY)
+[![Watch the video](https://i9.ytimg.com/vi_webp/CwNRd6YSiFY/mqdefault.webp?v=67c4405f&sqp=CMiFw74G&rs=AOn4CLC0658EXwj8bmtuc5TY_faOUERudw)](https://www.youtube.com/watch?v=CwNRd6YSiFY)
 
 
